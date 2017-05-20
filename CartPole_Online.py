@@ -31,7 +31,7 @@ e = 0.5
 loss_list = []
 
 # 게임반복 횟수 설정
-while epoch < 5000:
+while epoch < 50:
     # 매 게임마다 환경초기화
     done = False
     # 4개 값 리턴 --> 일종의 state
