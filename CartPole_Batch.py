@@ -38,14 +38,18 @@ with tf.name_scope("Optimizer"):
     Optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step=global_step)
     #Optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss)
 
-with tf.Session() as sess:
-    # Variables Initialization
-    init = tf.global_variables_initializer()
-    sess.run(init)
+# Summaries
+with tf.name_scope("Summaries"):
+    tf.summary.scalar('loss', loss)
 
-    # Visualization
-    writer = tf.summary.FileWriter(logdir="C:/Users/Jaehwi/Documents/4.Lecture/cs20si", graph=sess.graph)
-    tf.summary.scalar("loss", loss)
+with tf.Session() as sess:
+    # Summary set-up
+    merged = tf.summary.merge_all()
+    train_writer = tf.summary.FileWriter("./cartpole/train", sess.graph)
+    test_writer = tf.summary.FileWriter("./cartpole/test")
+
+    # initialization
+    tf.global_variables_initializer().run()
 
     for i in range(num_episodes):
         # 매 게임마다 환경초기화
@@ -90,8 +94,9 @@ with tf.Session() as sess:
                 batch_cnt += 1
             else:
                 # train the model
-                sess.run(Optimizer, feed_dict={X: np.reshape(batch_matrix_obs, [batch_size, 4]),
-                                               Y: np.reshape(batch_matrix_lbl, [batch_size, 2])})
+                summary, _ = sess.run([merged, Optimizer], feed_dict={X: np.reshape(batch_matrix_obs, [batch_size, 4]),
+                                                                      Y: np.reshape(batch_matrix_lbl, [batch_size, 2])})
+                train_writer.add_summary(summary, i)
 
                 # batch reset
                 batch_matrix_obs = []
@@ -101,8 +106,9 @@ with tf.Session() as sess:
         # move a step forward
         observation = next_observation_rs
         learning_rate *= 0.999
-        e = 1. / ((epoch // 10) + 1)
+        e = 1. / ((i // 10) + 1)
 
 plt.plot(range(len(reward_list)), reward_list, color='b', alpha=0.4)
 plt.show()
-writer.close()
+train_writer.close()
+test_writer.close()
